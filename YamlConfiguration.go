@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/newm4n/go-utility"
-	"log"
 	"os"
 	"reflect"
 	"regexp"
@@ -24,6 +23,7 @@ type yamlindice struct {
 	text  string
 }
 
+// Yaml struct holds the parsing instance object.
 type Yaml struct {
 	tabSize       int
 	prevIsArr     bool
@@ -33,12 +33,14 @@ type Yaml struct {
 	Properties    map[string]string
 }
 
+// EnvVarOverride holds information about how to overide configuration values with environment variables.
 type EnvVarOverride struct {
 	EnvVarOverride bool
 	WithReplacer   map[string]string
 	WithPrefix     string
 }
 
+// String get the content of this parser
 func (yml *Yaml) String() string {
 	buf := bytes.Buffer{}
 	for k, v := range yml.Properties {
@@ -47,6 +49,9 @@ func (yml *Yaml) String() string {
 	return buf.String()
 }
 
+// NewYaml function create and parse the configuration data,
+// if override is provided, it will also try to look for matchine environment variable and use it.
+// if override is nil, no environment variable lookup will be done.
 func NewYaml(p []byte, override *EnvVarOverride) (*Yaml, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(p))
 	y := &Yaml{
@@ -94,7 +99,7 @@ func (yml *Yaml) referenceLink() {
 			if re.MatchString(v) {
 				str := re.FindString(v)
 				ref := str[2 : len(str)-1]
-				log.Print(ref)
+				//log.Print(ref)
 				nv := strings.Replace(v, str, yml.Properties[ref], -1)
 				yml.Properties[k] = nv
 				refFound = true
@@ -178,12 +183,23 @@ func (yml *Yaml) getPathString() string {
 	return string(buf.Bytes())
 }
 
+// Clear will cleare up the configuration content.
 func (yml *Yaml) Clear() {
 	for k := range yml.Properties {
 		delete(yml.Properties, k)
 	}
 }
 
+// ListKeys List all configuration keys
+func (yml *Yaml) ListKeys() []string {
+	ret := make([]string,0,len(yml.Properties))
+	for key,_ := range yml.Properties {
+		ret = append(ret, key)
+	}
+	return ret
+}
+
+// Get will get the configuration value of a key.
 func (yml *Yaml) Get(key string) string {
 	if str, ok := yml.Properties[key]; !ok {
 		return ""
@@ -192,6 +208,7 @@ func (yml *Yaml) Get(key string) string {
 	}
 }
 
+// GetRequired is like Get, but if no configuration with specified key found, it will yield an error.
 func (yml *Yaml) GetRequired(key string) (string, error) {
 	if str, ok := yml.Properties[key]; !ok {
 		return "", errors.New(fmt.Sprintf("Configuration with key %s not exist.", key))
@@ -200,6 +217,7 @@ func (yml *Yaml) GetRequired(key string) (string, error) {
 	}
 }
 
+// GetDefaulted is like Get, but if no configuration with specified key found, the specified defaulted param will be returned.
 func (yml *Yaml) GetDefaulted(key, defaulted string) string {
 	if str, ok := yml.Properties[key]; !ok {
 		return defaulted
@@ -208,12 +226,14 @@ func (yml *Yaml) GetDefaulted(key, defaulted string) string {
 	}
 }
 
+// HaveKey will check if the key parameter is a valid configuration key.
 func (yml *Yaml) HaveKey(key string) bool {
 	_, ok := yml.Properties[key]
 	return ok
 }
 
-func (yml *Yaml) Unmarshal(target interface{}, keyPath string) error {
+// Unmarshal the loaded configuration into configuration struct.
+func (yml *Yaml) Unmarshal(target interface{}) error {
 
 	rv := reflect.ValueOf(target)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
@@ -364,25 +384,4 @@ func (yml *Yaml) unmarshal(v reflect.Value, keyPath string) error {
 	return nil
 }
 
-func (yml *Yaml) fieldOfProperty(p string) []string {
-	ret := make([]string, 0)
-	look := fmt.Sprintf("%s.", p)
-	for k, _ := range yml.Properties {
-		fmt.Println(k)
-		if len(p) == 0 {
-			idx := strings.Index(k, ".")
-			if idx == -1 {
-				ret = append(ret, k)
-			}
-		} else if k[:len(look)] == look {
-			str := k[len(look):]
-			idx := strings.Index(str, ".")
-			if idx == -1 {
-				ret = append(ret, str)
-			} else {
-				ret = append(ret, str[:idx])
-			}
-		}
-	}
-	return ret
-}
+

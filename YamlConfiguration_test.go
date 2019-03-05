@@ -73,8 +73,16 @@ func TestYaml_Unmarshal(t *testing.T) {
 		t.FailNow()
 	}
 	root := TheRoot{}
-	yaml.Unmarshal(&root, "")
-	//fmt.Printf("%v", root)
+	err = yaml.Unmarshal(&root)
+	if err != nil {
+		t.FailNow()
+	}
+	if root.GrandDad.Dad.Kid.Name != "Francis" {
+		t.FailNow()
+	}
+	if root.GrandDad.Dad.Kid.Age != 13 {
+		t.FailNow()
+	}
 }
 
 func TestNewYaml(t *testing.T) {
@@ -117,4 +125,22 @@ func TestNewYaml(t *testing.T) {
 	equals("", yaml.Get("one.onetwo.onetwothree.[3]"))
 	equals("", yaml.Get("one.onetwo.onetwothree"))
 	equals("", yaml.Get("one"))
+
+
+	_, err =  yaml.GetRequired("nonexistentkey")
+	if err == nil {
+		t.FailNow()
+	}
+	val, err :=  yaml.GetRequired("one.onetwo.onetwotwo")
+	if err != nil || val != "OVERIDE" {
+		t.FailNow()
+	}
+
+	if yaml.GetDefaulted("one.onetwo.onetwotwo", "DEFAULT") == "DEFAULT" {
+		t.FailNow()
+	}
+
+	if yaml.GetDefaulted("nonexistent", "DEFAULT") != "DEFAULT" {
+		t.FailNow()
+	}
 }
