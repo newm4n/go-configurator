@@ -1,7 +1,6 @@
 package yamlasprop
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -75,7 +74,7 @@ func TestYaml_Unmarshal(t *testing.T) {
 	}
 	root := TheRoot{}
 	yaml.Unmarshal(&root, "")
-	fmt.Printf("%v", root)
+	//fmt.Printf("%v", root)
 }
 
 func TestNewYaml(t *testing.T) {
